@@ -68,8 +68,8 @@
             // テキストが存在しない場合はエラー
             // NotFoundError: Failed to execute 'getType' on 'ClipboardItem': The type was not found
             async function readClipboard() {
-                if (!denied) {
-                    return;
+                if (denied) {
+                    return "クリップボード権限が拒否されました";
                 }
 
                 // クリップボードからテキストを取得
