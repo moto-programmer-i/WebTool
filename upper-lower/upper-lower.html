@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>クリップボード大文字小文字変換</title>
+        <link rel="stylesheet" href="../styles.css" />
+        <script src="../common.js" defer></script>
+    </head>
+    <body>
+        <style>
+            .view {
+                font-size: xx-large;
+                border: solid 4px;
+                padding: 10px;
+            }
+            .buttons {
+                margin-top: 2ex;
+                display: flex;
+                width: 100%;
+                gap: 5em;
+                align-items: end;
+            }
+            .upper {
+            }
+            .lower {
+                font-size: 1rem;
+                height: fit-content;
+            }
+        </style>
+
+        <div>
+            <div class="buttons">
+                <button type="button" class="upper" onclick="upper()">
+                    大文字
+                </button>
+                <button type="button" class="lower" onclick="lower()">
+                    小文字
+                </button>
+            </div>
+        </div>
+        <hr />
+        【クリップボード】
+        <div id="clipboard-view" class="view">（テキストなし）</div>
+        <br />
+        <br />
+        <div>※現状、Firefoxでは動作しません。</div>
+        <br />
+        <br />
+
+        <script>
+            var denied = false;
+            const clipboardView = document.getElementById("clipboard-view");
+
+            // クリップボードにテキストが存在しない例外処理
+            // Promiseにtry catchが個別に存在してしまうため、例外処理を複数書くしかない
+            const noText = (error) => {
+                if (error && error.name && error.name == "NotFoundError") {
+                    clipboardView.textContent = "";
+                    return;
+                }
+
+                // その他の例外は出力
+                clipboardView.textContent = error;
+                console.error(error);
+            };
+
+            // テキストが存在しない場合はエラー
+            // NotFoundError: Failed to execute 'getType' on 'ClipboardItem': The type was not found
+            async function readClipboard() {
+                if (!denied) {
+                    return;
+                }
+
+                // クリップボードからテキストを取得
+                const clipboardItems = await navigator.clipboard.read();
+                let text;
+
+                for (const clipboardItem of clipboardItems) {
+                    const blob = await clipboardItem.getType("text/plain");
+                    text = await blob.text();
+                    break;
+                }
+
+                clipboardView.textContent = text;
+                return text;
+            }
+
+            async function writeClipboard(text) {
+                // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write
+                const clipboardItemData = {
+                    ["text/plain"]: text,
+                };
+                await navigator.clipboard.write([
+                    new ClipboardItem(clipboardItemData),
+                ]);
+            }
+
+            async function main() {
+                // クリップボード権限取得
+                // writeはアクティブなら自動付与 https://developer.mozilla.org/ja/docs/Web/API/Clipboard/writeText
+                const permission = await navigator.permissions.query({
+                    name: "clipboard-read",
+                });
+
+                if (permission.state === "denied") {
+                    denied = true;
+                    throw new Error("Not allowed to read clipboard.");
+                }
+
+                // タブがアクティブになったときにクリップボード更新
+                addEventListener("focus", (event) => {
+                    readClipboard().catch(noText);
+                });
+
+                readClipboard().catch(noText);
+            }
+            main();
+
+            async function lower() {
+                readClipboard()
+                    .then((clipboard) => {
+                        const lowerText = clipboard.toLowerCase();
+                        writeClipboard(lowerText);
+                        clipboardView.textContent = lowerText;
+                    })
+                    .catch(noText);
+            }
+            async function upper() {
+                readClipboard()
+                    .then((clipboard) => {
+                        const upperText = clipboard.toUpperCase();
+                        writeClipboard(upperText);
+                        clipboardView.textContent = upperText;
+                    })
+                    .catch(noText);
+            }
+        </script>
+    </body>
+</html>
