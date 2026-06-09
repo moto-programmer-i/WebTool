@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>先攻後攻決め</title>
+        <link rel="stylesheet" href="../styles.css" />
+        <script src="../common.js" defer></script>
+    </head>
+    <body>
+        <style>
+            .content {
+                color: white;
+                font-size: 7rem;
+                text-align: center;
+                line-height: 1.1;
+                display: none;
+            }
+            .first {
+                background-color: crimson;
+            }
+            .second {
+                background-color: royalblue;
+            }
+        </style>
+        <div class="content first" id="first">先攻</div>
+        <div class="content second" id="second">後攻</div>
+
+        <div>
+            <button onclick="reload()">更新</button>
+        </div>
+
+        <script>
+            const WAIT_MILLISECONDS = 200;
+            // 先行後攻の乱数閾値
+            const FIRST_THRESHOLD = 0.5;
+            const first = document.getElementById("first");
+            const second = document.getElementById("second");
+            const contents = [first, second];
+
+            /**
+             * 先行後攻表示
+             */
+            function showFirst() {
+                console.log("showFirst");
+                if (Math.random() < FIRST_THRESHOLD) {
+                    first.style.display = "block";
+                } else {
+                    second.style.display = "block";
+                }
+            }
+
+            showFirst();
+
+            /**
+             * 更新
+             */
+            async function reload() {
+                // 速すぎるとわからないので一旦非表示にして待つ
+                for (const content of contents) {
+                    content.style.display = "none";
+                }
+                await new Promise((resolve) =>
+                    setTimeout(resolve, WAIT_MILLISECONDS),
+                );
+
+                // 表示
+                showFirst();
+            }
+        </script>
+    </body>
+</html>
